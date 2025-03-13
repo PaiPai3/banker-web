@@ -1,0 +1,14 @@
+.dimension-controls {
+    display: flex;
+    gap: 24px;
+    marginBottom: 20px;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 20px;
+    /*justify: center;*/
+    //调节组件居中
+    margin:20px 20px;
+
+}
