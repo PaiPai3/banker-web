@@ -88,7 +88,7 @@ input:focus {
     background-color: #535bf2;
 }
 
-.action-buttons button {
+.action-buttons-div button {
     padding: 8px 20px;
     background: #1890ff;
     color: white;
@@ -98,6 +98,6 @@ input:focus {
     transition: opacity 0.3s;
 }
 
-.action-buttons button:hover {
+.action-buttons-div button:hover {
     opacity: 0.9;
 }

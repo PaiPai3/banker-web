@@ -34,7 +34,7 @@ const Sidebar: React.FC<SidebarProps> = ({navItems}) => {
             <div className="logo-container">
                 <Link to="/" className="logo">
                     <span className="logo-icon">⚛️</span>
-                    <span className="logo-text">Matrix Tools</span>
+                    <span className="logo-text">系统软件作业集成页面</span>
                 </Link>
             </div>
 

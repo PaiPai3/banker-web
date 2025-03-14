@@ -3,25 +3,27 @@ import axios from 'axios';
 import DynamicMatrixTable from '../components/DynamicMatrixTable';
 import './BankerInputPage.css';
 import SafeSequence from "../components/SafeSequence";
+import DropDownMenu from "../components/DropDownMenu";
+import {HistoryItem} from "../components/DropDownMenu";
+
 
 const BankerInputPage: React.FC = () => {
-    const safeSequenceRef = React.useRef<HTMLDivElement>(null); // 声明 ref
-
+    // 声明 ref
+    const safeSequenceRef = React.useRef<HTMLDivElement>(null);
     // 单独的状态管理
     const [n, setN] = useState(4);
     const [m, setM] = useState(3);
-    const [requestProcess, setRequestProcess] = useState(3);
-
+    const [requestProcess, setRequestProcess] = useState(3);//是哪个进程请请求
     // 资源相关状态拆分
     const [available, setAvailable] = useState<number[]>([9, 3, 6]);
-    const [request, setRequest] = useState<number[]>([1, 1, 0]);
-
+    const [request, setRequest] = useState<number[]>([1, 1, 0]);//请求资源
     const [need, setNeed] = useState<number[][]>([[3, 2, 2], [6, 1, 3], [3, 1, 4], [4, 2, 2]]);
     const [allocation, setAllocation] = useState<number[][]>([[1, 0, 0], [5, 1, 1], [2, 1, 1], [0, 0, 2]]);
-    const [max, setMax] = useState<number[][]>([[4,2,2],[11,2,4],[5,2,5],[4,2,4]]);
+    const [max, setMax] = useState<number[][]>([[4, 2, 2], [11, 2, 4], [5, 2, 5], [4, 2, 4]]);
+    const [executeTime, setExecuteTime] = useState<number[]>([5, 7, 9, 10]);//进程的执行时间
+    const [safeSequence, setSafeSequence] = useState<number[][]>([]);//安全序列
+    const [historyItems, setHistoryItems] = useState<HistoryItem[]>([]);
 
-    const [executeTime, setExecuteTime] = useState<number[]>([5, 7, 9, 10]);
-    const [safeSequence, setSafeSequence] = useState<number[][]>([]);
 
     //确保max=need+allocation
     useEffect(() => {
@@ -46,7 +48,9 @@ const BankerInputPage: React.FC = () => {
     };
 
 
-    // 数据获取
+    /*
+        随机生成矩阵
+     */
     const fetchData = useCallback(async () => {
         try {
             const response = await axios.get('http://localhost:8080/api/generate', {
@@ -78,7 +82,9 @@ const BankerInputPage: React.FC = () => {
         }
     }, [n, m, requestProcess]);
 
-    // 保存配置
+    /*
+        保存当前矩阵
+     */
     const saveMatrix = async () => {
         try {
             const payload = {
@@ -102,6 +108,9 @@ const BankerInputPage: React.FC = () => {
         }
     };
 
+    /*
+        生成安全序列
+     */
     const calculateSafeSequence = async () => {
         try {
             const payload = {
@@ -137,21 +146,74 @@ const BankerInputPage: React.FC = () => {
         }
     };
 
+    /*
+        获取全部矩阵历史数据
+     */
+    const fetchHistory = useCallback(async () => {
+        try {
+            const response = await axios.get('http://localhost:8080/api/list'); // 假设后端有此接口
+            const items = response.data.data as HistoryItem[];
 
-    // 输入处理
+            console.log('历史记录:', items)
+            console.log('历史记录:', items[0].createTime)
+
+            setHistoryItems(items);
+        } catch (error) {
+            console.error('获取历史记录失败:', error);
+        }
+    }, []);
+
+    // 选择历史项时加载具体矩阵的函数
+    const handleSelectHistory = useCallback(async (selectedItem: HistoryItem) => {
+        try {
+            const response = await axios.get(
+                `http://localhost:8080/api/load?createTime=${selectedItem.createTime}` // 假设需要ID参数
+            );
+            const data = response.data.data;
+
+            // 更新所有相关状态
+            setN(data.n);
+            setM(data.m);
+            setRequestProcess(data.requestProcess);
+            setAvailable(data.available);
+            setRequest(data.request);
+            setNeed(data.need);
+            setAllocation(data.allocation);
+            setMax(data.max);
+            setExecuteTime(data.executeTime);
+        } catch (error) {
+            console.error('加载历史矩阵失败:', error);
+        }
+    }, []);
+
+
+    // 在组件挂载时自动获取历史记录
+    useEffect(() => {
+        fetchHistory();
+    }, [fetchHistory,n,m,requestProcess,need]);
+
+
+    /*
+        处理控制面板输入变化
+     */
     const handleInputChange = (setter: React.Dispatch<React.SetStateAction<number>>) =>
         (e: React.ChangeEvent<HTMLInputElement>) => {
             const value = Math.max(0, parseInt(e.target.value) || 0);
             setter(value);
         };
 
-    // 进程数特殊处理
+
+    /*
+        设置请求进程的范围在0~n-1
+     */
     const handleProcessChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const value = Math.max(0, parseInt(e.target.value) || 0);
         setRequestProcess(prev => Math.min(value, n - 1));
     };
 
-    // 矩阵显示组件
+    /*
+        渲染矩阵
+     */
     const renderMatrixTable = (
         title: string,
         data: number[] | number[][],
@@ -166,13 +228,15 @@ const BankerInputPage: React.FC = () => {
                 n={rows}
                 m={cols}
                 data={Array.isArray(data[0]) ? data as number[][] : data as number[]}
-                onDataChange={Array.isArray(data[0])? onDataChange as (data: number[][]) => void : onDataChange as (data: number[]) => void}
+                onDataChange={Array.isArray(data[0]) ? onDataChange as (data: number[][]) => void : onDataChange as (data: number[]) => void}
                 corner={corner}
             />
         </div>
     );
 
-    // 输入组件渲染
+    /*
+        渲染控制面板输入框
+     */
     const renderDimensionInput = (
         label: string,
         value: number,
@@ -191,12 +255,31 @@ const BankerInputPage: React.FC = () => {
         </div>
     );
 
+    /*
+        渲染滑动表
+     */
     const renderSafeSequenceTable = (safeSequence: number[][]) => {
         return (
             <SafeSequence safetySequences={safeSequence}/>
         );
     };
 
+    /*
+        渲染下拉列表
+     */
+    const renderDropDownMenu = () => (
+        <div className="dropdown-container" >
+            <DropDownMenu
+                items={historyItems}
+                onSelect={handleSelectHistory}
+            />
+        </div>
+    );
+
+
+    /*
+        滑动到安全序列表格
+     */
     const scrollToSafeSequence = () => {
         safeSequenceRef.current?.scrollIntoView({
             behavior: 'smooth',  // 平滑滚动效果
@@ -207,21 +290,28 @@ const BankerInputPage: React.FC = () => {
 
     return (
         <div className="page-container">
+            <h1>银行家算法</h1>
             <div className="control-panel">
+                <h3>控制面板</h3>
                 <div className="dimension-controls">
-                    {renderDimensionInput('进程数 (n)', n, handleInputChange(setN))}
-                    {renderDimensionInput('资源数 (m)', m, handleInputChange(setM))}
+                    {renderDimensionInput('进程数(n)', n, handleInputChange(setN))}
+                    {renderDimensionInput('资源数(m)', m, handleInputChange(setM))}
                     {renderDimensionInput('请求进程', requestProcess, handleProcessChange, 0)}
                 </div>
 
+                {/*<div className="drop-down">*/}
+                {/*    {renderDropDownMenu(historyItems, handleSelectHistory)}*/}
+                {/*</div>*/}
+
                 <div className="action-buttons">
-                    <button onClick={fetchData}>获取数据</button>
-                    <button onClick={saveMatrix}>保存配置</button>
-                    <button onClick={() => {
+                    <button className="control-buttons" onClick={fetchData}>随机生成</button>
+                    <button className="control-buttons" onClick={saveMatrix}>保存矩阵</button>
+                    <button className="control-buttons" onClick={() => {
                         calculateSafeSequence();
                         scrollToSafeSequence();
                     }}>计算安全序列
                     </button>
+                    {renderDropDownMenu()}
                 </div>
             </div>
 
