@@ -6,7 +6,6 @@ import SafeSequence from "../components/SafeSequence";
 import DropDownMenu from "../components/DropDownMenu";
 import {HistoryItem} from "../components/DropDownMenu";
 
-
 const BankerInputPage: React.FC = () => {
     // 声明 ref
     const safeSequenceRef = React.useRef<HTMLDivElement>(null);
@@ -62,12 +61,12 @@ const BankerInputPage: React.FC = () => {
                 Array.isArray(arr) ? arr : fallback;
 
             // 独立设置各个资源状态
-            setAvailable(normalizeArray(data.available, new Array(m).fill(0)));
-            setRequest(normalizeArray(data.request));
-            setNeed(normalizeArray(data.need, new Array(n).fill(new Array(m).fill(0))));
-            setAllocation(normalizeArray(data.allocation));
-            // setMax(normalizeArray(data.max));
-            setExecuteTime(normalizeArray(data.executeTime));
+            setAvailable(normalizeArray(data.available, new Array(data.m).fill(0)));
+            setRequest(normalizeArray(data.request, new Array(data.m).fill(0)));
+            setNeed(normalizeArray(data.need, new Array(data.n).fill(new Array(data.m).fill(0))));
+            setAllocation(normalizeArray(data.allocation, new Array(data.n).fill(new Array(data.m).fill(0))));
+            setMax(normalizeArray(data.max,new Array(data.n).fill(new Array(data.m).fill(0))));
+            setExecuteTime(normalizeArray(data.executeTime, new Array(data.n).fill(0)));
 
             console.log('数据获取成功:', data);
             console.log('数据获取成功:', data.available);
@@ -77,7 +76,14 @@ const BankerInputPage: React.FC = () => {
             console.log('数据获取成功:', data.max);
             console.log('数据获取成功:', data.executeTime);
 
+            console.log('修改后', available);
+            console.log('修改后', request);
+            console.log('修改后', need);
+            console.log('修改后', allocation);
+            console.log('修改后', max);
+
         } catch (error) {
+            alert('数据获取失败×');
             console.error('数据获取失败:', error);
         }
     }, [n, m, requestProcess]);
@@ -103,7 +109,9 @@ const BankerInputPage: React.FC = () => {
                 headers: {'Content-Type': 'application/json'}
             });
             console.log('配置保存成功');
+            alert('配置保存成功√');
         } catch (error) {
+            alert('配置保存失败×');
             console.error('保存配置失败:', error);
         }
     };
@@ -142,6 +150,7 @@ const BankerInputPage: React.FC = () => {
             setSafeSequence(response.data.data);
 
         } catch (error) {
+            alert('计算失败×');
             console.error('计算失败:', error);
         }
     };
@@ -154,8 +163,8 @@ const BankerInputPage: React.FC = () => {
             const response = await axios.get('http://localhost:8080/api/list'); // 假设后端有此接口
             const items = response.data.data as HistoryItem[];
 
-            console.log('历史记录:', items)
-            console.log('历史记录:', items[0].createTime)
+            // console.log('历史记录:', items)
+            // console.log('历史记录:', items[0].createTime)
 
             setHistoryItems(items);
         } catch (error) {
@@ -171,26 +180,53 @@ const BankerInputPage: React.FC = () => {
             );
             const data = response.data.data;
 
+            const normalizeArray = (arr: unknown, fallback: any[] = []) =>
+                Array.isArray(arr) ? arr : fallback;
+
             // 更新所有相关状态
             setN(data.n);
             setM(data.m);
             setRequestProcess(data.requestProcess);
-            setAvailable(data.available);
-            setRequest(data.request);
-            setNeed(data.need);
-            setAllocation(data.allocation);
-            setMax(data.max);
-            setExecuteTime(data.executeTime);
+
+            // 独立设置各个资源状态
+            setAvailable(normalizeArray(data.available, new Array(data.m).fill(0)));
+            setRequest(normalizeArray(data.request, new Array(data.m).fill(0)));
+            setNeed(normalizeArray(data.need, new Array(data.n).fill(new Array(data.m).fill(0))));
+            setAllocation(normalizeArray(data.allocation, new Array(data.n).fill(new Array(data.m).fill(0))));
+            setMax(normalizeArray(data.max, new Array(data.n).fill(new Array(data.m).fill(0))));
+            setExecuteTime(normalizeArray(data.executeTime, new Array(data.n).fill(0)));
+
+            // setMatrix(data);
+
+            console.log();
+            console.log('数据获取成功:', data);
+            console.log('数据获取成功avai:', data.available);
+            console.log('数据获取成功req:', data.request);
+            console.log('数据获取成功need:', data.need);
+            console.log('数据获取成功alloc:', data.allocation);
+            console.log('数据获取成功max:', data.max);
+            console.log('数据获取成功exe:', data.executeTime);
+
+            console.log();
+            console.log('修改后avai', available);
+            console.log('修改后req', request);
+            console.log('修改后need', need);
+            console.log('修改后alloc', allocation);
+            console.log('修改后max', max);
+            console.log('修改后exe', executeTime)
+
+
         } catch (error) {
             console.error('加载历史矩阵失败:', error);
         }
     }, []);
 
 
+
     // 在组件挂载时自动获取历史记录
     useEffect(() => {
         fetchHistory();
-    }, [fetchHistory,n,m,requestProcess,need]);
+    }, [fetchHistory, n, m, requestProcess, need]);
 
 
     /*
@@ -234,6 +270,7 @@ const BankerInputPage: React.FC = () => {
         </div>
     );
 
+
     /*
         渲染控制面板输入框
      */
@@ -260,7 +297,7 @@ const BankerInputPage: React.FC = () => {
      */
     const renderSafeSequenceTable = (safeSequence: number[][]) => {
         return (
-            <SafeSequence safetySequences={safeSequence}/>
+            <SafeSequence safeSequences={safeSequence}/>
         );
     };
 
@@ -268,7 +305,7 @@ const BankerInputPage: React.FC = () => {
         渲染下拉列表
      */
     const renderDropDownMenu = () => (
-        <div className="dropdown-container" >
+        <div className="dropdown-container">
             <DropDownMenu
                 items={historyItems}
                 onSelect={handleSelectHistory}
@@ -322,6 +359,7 @@ const BankerInputPage: React.FC = () => {
                 {renderMatrixTable('分配矩阵Allocation', allocation, n, m, setAllocation, '进程\\资源')}
                 {renderMatrixTable('需求矩阵Need', need, n, m, setNeed, '进程\\资源')}
                 {renderMatrixTable('最大需求矩阵Max', max, n, m, validateMaxChange, '进程\\资源')}
+                {/*{renderMatrixTable('最大需求矩阵Max', max, n, m, setMax, '进程\\资源')}*/}
 
             </div>
 

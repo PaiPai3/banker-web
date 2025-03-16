@@ -1,15 +1,15 @@
 import React from 'react';
 import './SafeSequence.css';
 
-interface Props {
-  safetySequences: number[][];
+interface SafeSequenceProps {
+  safeSequences: number[][];
 }
 
-const SafeSequence: React.FC<Props> = ({ safetySequences }) => {
+const SafeSequence: React.FC<SafeSequenceProps> = ({ safeSequences }) => {
   return (
     <div className="sequence-container">
       <h2>安全序列列表</h2>
-      {safetySequences.length > 0 ? (
+      {safeSequences.length > 0 ? (
         <div className="scroll-wrapper">
           <table className="sequence-table">
             <thead>
@@ -19,7 +19,7 @@ const SafeSequence: React.FC<Props> = ({ safetySequences }) => {
               </tr>
             </thead>
             <tbody>
-              {safetySequences.map((sequence, index) => (
+              {safeSequences.map((sequence, index) => (
                 <tr key={index}>
                   <td className="index-cell">{index + 1}</td>
                   <td className="sequence-cell">
